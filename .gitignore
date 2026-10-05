@@ -1,0 +1,4 @@
+build/
+raytracer
+*.ppm
+.DS_Store
