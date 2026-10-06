@@ -78,3 +78,9 @@ src/
 
 Represents a ray using an origin and direction.
 
+## commands
+mkdir -p build
+clang++ -std=c++17 -x c++ main -o build/ray-tacer
+./build/ray-tacer > image.ppm
+open image.ppm
+
