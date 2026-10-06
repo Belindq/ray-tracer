@@ -17,9 +17,27 @@ int main() {
 
     int image_height = int(image_width/inspect_ratio);
     image_height = (image_height<1) ? 1 : image_height;
+
     // Camera
 
-    
+    auto focal_length =1.0;
+    auto viewport_height = 2.0;
+    auto viewport_width = viewport_height * (double (viewport_width)/viewport_height);
+    auto camera_center = point3(0,0,0);
+
+    // Calculate the vectors across the horizontal and down the vertical viewport edges.
+
+    auto viewport_u = vec3(viewport_width,0,0);
+    auto viewport_v = vec3(0,-viewport_height,0);
+
+    // Calculate the horizontal and vertical delta vectors from pixel to pixel.
+
+    auto pixel_u = viewport_u /image_width;
+    auto pixel_v = viewport_v / image_height;
+
+    auto upper_left = camera_center - vec3(0,0,focal_length) - vec3(viewport_u/2,0,0)-vec3(0,viewport_v/2,0);
+    auto p00_center = upper_left + .5* (pixel_u +pixel_v);
+
 
     // Render
 
@@ -28,8 +46,11 @@ int main() {
     for (int j = 0; j < image_height; j++) {
         std::clog<<"scanlines remaining: " << image_height-j-1 << ' ' << std::flush;
         for (int i = 0; i < image_width; i++) {
-            auto pixel =( double(i)/image_height, double(j)/image_width, 0);
-            write_colour(std::cout, pixel);
+            auto pixel_center = p00_center + (i*pixel_u + j *pixel_v);
+            auto ray_direction = pixel_center - camera_center;
+            ray r(camera_center, ray_direction);
+            colour pixel_colour = ray_colour(r);
+            
         }
     }
     std::clog << "\nDone.\n";
