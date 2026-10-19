@@ -6,7 +6,10 @@ A CPU-based path tracer built in C++ while working through
 
 performance optimizations and benchmarking.
 
-![Final Render](images/final-render.png)
+progress:
+
+<img width="400" height="225" alt="image" src="https://github.com/user-attachments/assets/fdcf6396-390a-4cc4-9133-86b9cca77bef" />
+
 
 ## Overview
 
