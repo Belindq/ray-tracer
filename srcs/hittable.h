@@ -8,13 +8,22 @@ class hit_record {
         point3 p;
         vec3 normal;
         double t;
+        bool front_face;
+        
+        void set_normal_face(const vec3& outward_normal, const ray& r){
+            front_face = dot(r.direction(), outward_normal) < 0;
+            normal = front_face ? outward_normal : -outward_normal;
+        }
 
 };
+
+
 class hittable{
     public:
         virtual ~hittable() = default;
 
         virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec ) const =0;
 };
+
 
 #endif
