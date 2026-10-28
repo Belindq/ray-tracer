@@ -1,10 +1,10 @@
 #ifndef SPHERE_H
 #define SPHERE_H
-#include "vec3.h"
+#include "utils.h"
 #include "hittable.h"
 class sphere: public hittable{
     public:
-        sphere(const point3& center, double radius) : center(center), radius(std::max(0,radius)){}
+        sphere(const point3& center, double radius) : center(center), radius(std::max(0.0,radius)){}
         bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const override {
         vec3 oc = center - r.origin();
         auto a = r.direction().length_squared();
