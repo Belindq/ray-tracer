@@ -7,7 +7,7 @@ class camera {
 public:
     double aspect_ratio = 16.0 / 9.0;
     int image_width = 400;
-    double samples_per_pix=100;
+    double samples_per_pix=50;
 
     void render(const hittable& world) {
         initialize();
@@ -85,7 +85,8 @@ private:
     colour ray_colour(const ray& r, const hittable& world) const {
         hit_record rec;
         if (world.hit(r, interval(0, infinity), rec)) {
-            return 0.5 * (rec.normal + colour(1, 1, 1));
+            vec3 direction = random_on_hemisphere(rec.normal);
+            return 0.5 * ray_colour(ray(rec.p, direction), world);
         }
 
         vec3 unit_direction = unit_vector(r.direction());
