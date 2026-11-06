@@ -85,7 +85,7 @@ private:
     colour ray_colour(const ray& r, const hittable& world) const {
         hit_record rec;
         if (world.hit(r, interval(0, infinity), rec)) {
-            vec3 direction = random_on_hemisphere(rec.normal);
+            vec3 direction = rec.normal+random_unit_vector();
             return 0.5 * ray_colour(ray(rec.p, direction), world);
         }
 
