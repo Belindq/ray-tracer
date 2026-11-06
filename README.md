@@ -1,89 +1,89 @@
 # C++ Ray Tracer
 
-A CPU-based path tracer built in C++ while working through
+A CPU-based ray tracer built in C++ while working through *Ray Tracing in One Weekend*. This project explores ray intersections, camera sampling, and diffuse light scattering.
 
-*Ray Tracing in One Weekend*, then extended with my own
+## Progress
 
-performance optimizations and benchmarking.
+![Ray tracer progress render](image.png)
 
-progress:
+The renderer currently includes:
 
-![alt text](image.png)
+- Sphere intersections with closest-hit selection across a scene.
+- Surface normals oriented against the incoming ray.
+- A camera class that handles image setup, ray generation, and rendering.
+- Anti-aliasing through random samples within each pixel.
+- Recursive diffuse scattering with 50% attenuation at each bounce.
+- A sky gradient and plain-text PPM image output.
 
+The default scene contains a small sphere above a large ground sphere. It renders at **400 × 225 pixels** with **50 samples per pixel**.
 
-## Overview
+## Build and Run
 
-This project was my introduction to computer graphics and ray tracing
+You need a C++17 compiler such as Clang or GCC. There are no external library dependencies.
 
-in C++. I built the core renderer alongside *Ray Tracing in One Weekend*
+From the repository root:
 
-to understand the mathematics and architecture behind a basic path tracer.
+```sh
+mkdir -p build
+clang++ -std=c++17 -O2 -x c++ srcs/main -o build/ray-tacer
+./build/ray-tacer > image.ppm
+```
 
-The renderer supports:
+You can substitute `g++` for `clang++`. The `-x c++` flag is needed because `srcs/main` has no file extension.
 
-- Ray-object intersection
+Image data goes to standard output, while scanline progress goes to standard error. The generated `image.ppm` can be opened in a PPM-compatible image viewer. On macOS:
 
-- Surface normals
+```sh
+open image.ppm
+```
 
-- Anti-aliasing
+## Configure the Render
 
-- Diffuse, metallic, and dielectric materials
+Edit the camera settings in `srcs/main` before calling `render()`:
 
-- Reflection and refraction
+```cpp
+camera cam;
+cam.aspect_ratio = 16.0 / 9.0;
+cam.image_width = 400;
+cam.samples_per_pix = 50;
+cam.render(world);
+```
 
-- Configurable camera and depth of field
+Use a positive image width and aspect ratio, and a positive whole number of samples. Image height is calculated from the width and aspect ratio. More samples reduce noise and smooth edges, but take longer to render.
 
-- Recursive ray scattering
+Add spheres to `world` before rendering:
 
+```cpp
+world.add(make_shared<sphere>(point3(0, 0, -1), 0.5));
+world.add(make_shared<sphere>(point3(0, -100.5, -1), 100));
+```
 
 ## How It Works
 
-For every pixel, the camera generates one or more rays into the scene.
+A ray is represented by `P(t) = O + tD`, where `O` is its origin, `D` is its direction, and `t` is a parameter along the ray. The camera sends rays through randomly selected positions within each pixel.
 
-Each ray is represented as:
+For each ray, the scene finds the closest sphere intersection within the allowed interval. At a hit, the renderer chooses a diffuse direction using the surface normal plus a random unit vector, traces another ray, and halves the returned colour. Rays that miss the scene return the sky gradient.
 
-P(t) = O + tD
+The camera averages all samples for a pixel. The colour writer clamps the result and converts it to integer RGB values for the PPM file.
 
-where:
+## Project Structure
 
-- O is the ray origin
+```text
+srcs/
+├── main             # Scene construction and camera settings
+├── camera.h         # Camera setup, sampling, and recursive rendering
+├── hittable.h       # Intersection interface and hit records
+├── hittable_list.h  # Scene objects and closest-hit selection
+├── sphere.h         # Sphere intersection implementation
+├── interval.h       # Numeric bounds and clamping
+├── ray.h            # Ray origin, direction, and points along a ray
+├── vec3.h           # Vector math and random direction helpers
+├── colour.h         # RGB conversion and PPM pixel output
+└── utils.h          # Shared constants, random numbers, and includes
+```
 
-- D is the ray direction
+## Work in Progress
 
-- t represents distance along the ray
+Diffuse scattering is implemented directly in the camera's shading function. Separate materials, metallic reflection, dielectric refraction, depth of field, and gamma correction are not implemented yet.
 
-The renderer determines the closest object intersected by each ray,
-
-computes the material interaction at that point, and recursively traces
-
-scattered rays until they hit the environment or reach the maximum
-
-recursion depth.
-
-Multiple samples are averaged per pixel to reduce aliasing and noise.
-
-## Architecture
-
-src/
-
-
-├── color.h
-
-├── ray.h
-
-├── vec3.h
-
-└── main.cpp
-
-### Core Components
-
-**Ray**
-
-Represents a ray using an origin and direction.
-
-## commands
-mkdir -p build &&
-clang++ -std=c++17 -x c++ srcs/main -o build/ray-tacer &&
-./build/ray-tacer > image.ppm &&
-open image.ppm
-
+Recursive scattering currently has no maximum bounce limit, and secondary rays start at the surface with a zero lower intersection bound. A bounce limit and an offset to avoid self-intersections are still needed.
