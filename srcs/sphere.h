@@ -4,7 +4,9 @@
 #include "hittable.h"
 class sphere: public hittable{
     public:
-        sphere(const point3& center, double radius) : center(center), radius(std::max(0.0,radius)){}
+        sphere(const point3& center, double radius) : center(center), radius(std::max(0.0,radius)){
+            // initialize mat here 
+        }
         bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
         vec3 oc = center - r.origin();
         auto a = r.direction().length_squared();
@@ -27,6 +29,7 @@ class sphere: public hittable{
         rec.t = root;
         rec.p = r.at(root);
         rec.set_normal_face((rec.p - center)/radius, r);
+        rec.mat =mat;
         return true;
         }
 
@@ -34,5 +37,6 @@ class sphere: public hittable{
     private:
         vec3 center;
         double radius;
+        shared_ptr<material> mat;
 };
 #endif
