@@ -21,9 +21,10 @@ The default scene contains a small sphere above a large ground sphere. It render
 
 You need a C++17 compiler such as Clang or GCC. There are no external library dependencies.
 
-From the repository root:
+Change into your `ray-tacer` checkout first (running from another project such as `accrual-app` will fail to find `srcs/main`):
 
 ```sh
+cd /path/to/ray-tacer
 mkdir -p build
 clang++ -std=c++17 -O2 -x c++ srcs/main -o build/ray-tacer
 ./build/ray-tacer > image.ppm
@@ -86,4 +87,4 @@ srcs/
 
 Diffuse scattering is implemented directly in the camera's shading function. Separate materials, metallic reflection, dielectric refraction, depth of field, and gamma correction are not implemented yet.
 
-Recursive scattering currently has no maximum bounce limit, and secondary rays start at the surface with a zero lower intersection bound. A bounce limit and an offset to avoid self-intersections are still needed.
+Recursive scattering is limited by `cam.max_depth` (50 by default). Secondary intersections use a small positive lower bound to avoid self-intersections.

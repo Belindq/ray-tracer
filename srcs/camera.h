@@ -8,6 +8,7 @@ public:
     double aspect_ratio = 16.0 / 9.0;
     int image_width = 400;
     double samples_per_pix=50;
+    int max_depth = 50;
 
     void render(const hittable& world) {
         initialize();
@@ -21,7 +22,7 @@ public:
                 colour colour_pixel(0,0,0);
                 for (int sample =0; sample<samples_per_pix;sample++){
                     ray r = get_ray(i,j);
-                    colour_pixel +=ray_colour(r, world);
+                    colour_pixel +=ray_colour(r, max_depth, world);
                 }   
                 write_colour(std::cout, sample_scale * colour_pixel);
 
@@ -82,11 +83,13 @@ private:
 
     }
 
-    colour ray_colour(const ray& r, const hittable& world) const {
+    colour ray_colour(const ray& r, int depth, const hittable& world) const {
+        if (depth <= 0) return colour(0, 0, 0);
+
         hit_record rec;
-        if (world.hit(r, interval(0, infinity), rec)) {
+        if (world.hit(r, interval(0.001, infinity), rec)) {
             vec3 direction = rec.normal+random_unit_vector();
-            return 0.1 * ray_color(ray(rec.p, direction), depth-1, world);
+            return 0.5 * ray_colour(ray(rec.p, direction), depth-1, world);
         }
 
         vec3 unit_direction = unit_vector(r.direction());
