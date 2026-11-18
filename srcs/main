@@ -3,14 +3,57 @@
 #include "sphere.h"
 #include "camera.h"
 
-int main() {
-    hittable_list world;
-    world.add(make_shared<sphere>(point3(0, 0, -1), 0.5));
-    world.add(make_shared<sphere>(point3(0, -100.5, -1), 100));
+#include <iomanip>
+#include <string>
 
-    camera cam;
-    cam.aspect_ratio = 16.0 / 9.0;
-    cam.image_width = 400;
-    cam.render(world);
-    
+namespace {
+std::uint64_t number(const std::string& text, std::uint64_t maximum) {
+    if (text.empty() || text.find_first_not_of("0123456789") != std::string::npos)
+        throw std::invalid_argument("expected an unsigned integer: " + text);
+    std::size_t consumed = 0;
+    auto value = std::stoull(text, &consumed);
+    if (consumed != text.size() || value > maximum)
+        throw std::invalid_argument("argument out of range: " + text);
+    return value;
+}
+}
+
+int main(int argc, char** argv) {
+    try {
+        camera cam;
+        bool write_image = true;
+        for (int i = 1; i < argc; ++i) {
+            std::string option = argv[i];
+            if (option == "--help") {
+                std::cout << "Usage: ray-tacer [--threads 1..1024] [--width 1..32768]\n"
+                          << "  [--samples N] [--depth 1..256] [--seed N] [--no-output]\n"
+                          << "Defaults: threads=1 width=400 samples=50 depth=50 seed=2027\n"
+                          << "Timing includes setup, buffer allocation and workers; excludes PPM output.\n";
+                return 0;
+            }
+            if (option == "--no-output") { write_image = false; continue; }
+            if (option != "--threads" && option != "--width" && option != "--samples" &&
+                option != "--depth" && option != "--seed")
+                throw std::invalid_argument("unknown option: " + option);
+            if (++i == argc) throw std::invalid_argument("missing value for " + option);
+            const std::string value = argv[i];
+            if (option == "--threads") cam.thread_count = number(value, 1024);
+            if (option == "--width") cam.image_width = number(value, 32768);
+            if (option == "--samples") cam.samples_per_pix = number(value, 1000000);
+            if (option == "--depth") cam.max_depth = number(value, 256);
+            if (option == "--seed") cam.seed = number(value, UINT64_MAX);
+        }
+        hittable_list world;
+        world.add(make_shared<sphere>(point3(0, 0, -1), 0.5));
+        world.add(make_shared<sphere>(point3(0, -100.5, -1), 100));
+        const auto stats = cam.render(world, std::cout, write_image);
+        if (!std::cout) throw std::runtime_error("failed to write image");
+        std::cerr << std::setprecision(9) << "{\"render_seconds\":" << stats.seconds
+                  << ",\"threads\":" << stats.threads << ",\"width\":" << stats.width
+                  << ",\"height\":" << stats.height << ",\"samples\":" << cam.samples_per_pix
+                  << ",\"depth\":" << cam.max_depth << ",\"seed\":" << cam.seed << "}\n";
+    } catch (const std::exception& error) {
+        std::cerr << "Error: " << error.what() << '\n';
+        return 1;
+    }
 }

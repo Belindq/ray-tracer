@@ -3,32 +3,92 @@
 
 #include "hittable.h"
 #include "utils.h"
+#include <atomic>
+#include <chrono>
+#include <cstdint>
+#include <exception>
+#include <mutex>
+#include <stdexcept>
+#include <thread>
+#include <vector>
+
+struct render_stats {
+    double seconds;
+    unsigned threads;
+    int width;
+    int height;
+};
+
 class camera {
 public:
     double aspect_ratio = 16.0 / 9.0;
     int image_width = 400;
-    double samples_per_pix=50;
+    int samples_per_pix = 50;
     int max_depth = 50;
+    unsigned thread_count = 1;
+    std::uint64_t seed = 2027;
 
-    void render(const hittable& world) {
-        initialize();
-
-        std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
-
-        for (int j = 0; j < image_height; j++) {
-            std::clog << "\rScanlines remaining: " << image_height - j << ' '
-                      << std::flush;
-            for (int i = 0; i < image_width; i++) {
-                colour colour_pixel(0,0,0);
-                for (int sample =0; sample<samples_per_pix;sample++){
-                    ray r = get_ray(i,j);
-                    colour_pixel +=ray_colour(r, max_depth, world);
-                }   
-                write_colour(std::cout, sample_scale * colour_pixel);
-
-            }
+    render_stats render(const hittable& world, std::ostream& out = std::cout,
+                        bool write_image = true) {
+        if (image_width < 1 || image_width > 32768 || samples_per_pix < 1 ||
+            max_depth < 1 || max_depth > 256 || thread_count < 1 ||
+            !std::isfinite(aspect_ratio) || aspect_ratio <= 0 ||
+            image_width / aspect_ratio > 32768) {
+            throw std::invalid_argument("invalid camera settings");
         }
-        std::clog << "\rDone.                 \n";
+        const auto start = std::chrono::steady_clock::now();
+        initialize();
+        std::vector<colour> pixels(static_cast<std::size_t>(image_width) * image_height);
+        const auto workers = std::min(thread_count, static_cast<unsigned>(image_height));
+        std::atomic<int> next_row{0};
+        std::atomic<bool> stop{false};
+        std::mutex failure_mutex;
+        std::exception_ptr failure;
+        // Rows vary in cost (sky versus diffuse bounces), so claim them dynamically.
+        auto worker = [&] {
+            try {
+                while (!stop.load(std::memory_order_relaxed)) {
+                    const int j = next_row.fetch_add(1, std::memory_order_relaxed);
+                    if (j >= image_height) break;
+                    for (int i = 0; i < image_width; ++i) {
+                        const auto index = static_cast<std::size_t>(j) * image_width + i;
+                        // Pixel identity, not worker identity, selects its random stream.
+                        seed_random(seed + UINT64_C(0x9e3779b97f4a7c15) * (index + 1));
+                        colour sum(0, 0, 0);
+                        for (int sample = 0; sample < samples_per_pix; ++sample)
+                            sum += ray_colour(get_ray(i, j), max_depth, world);
+                        pixels[index] = sample_scale * sum;
+                    }
+                }
+            } catch (...) {
+                std::lock_guard<std::mutex> lock(failure_mutex);
+                if (!failure) failure = std::current_exception();
+                stop.store(true, std::memory_order_relaxed);
+            }
+        };
+        if (workers == 1) {
+            worker();
+        } else {
+            std::vector<std::thread> threads;
+            threads.reserve(workers);
+            try {
+                for (unsigned t = 0; t < workers; ++t) threads.emplace_back(worker);
+            } catch (...) {
+                stop.store(true, std::memory_order_relaxed);
+                for (auto& t : threads) t.join();
+                throw;
+            }
+            for (auto& t : threads) t.join();
+        }
+        if (failure) std::rethrow_exception(failure);
+        const double elapsed = std::chrono::duration<double>(
+            std::chrono::steady_clock::now() - start).count();
+        // Only the caller writes the image, in pixel order, after joining.
+        if (write_image) {
+            out << "P3\n" << image_width << ' ' << image_height << "\n255\n";
+            for (const auto& pixel : pixels) write_colour(out, pixel);
+        }
+        return {elapsed, workers, image_width, image_height};
     }
 
 private:
@@ -65,7 +125,7 @@ private:
         p00_center = upper_left + 0.5 * (pixel_u + pixel_v);
     }
 
-    ray get_ray(int i, int j){
+    ray get_ray(int i, int j) const {
         // Construct a camera ray originating from the origin and directed at randomly sampled
         // point around the pixel location i, j
         auto offset = sample();
@@ -77,7 +137,7 @@ private:
 
     }
 
-    vec3 sample(){
+    vec3 sample() const {
         // Returns the vector to a random point in the [-.5,-.5]-[+.5,+.5] unit square.
         return vec3(random_double() - 0.5, random_double() - 0.5, 0);
 
@@ -89,6 +149,7 @@ private:
         hit_record rec;
         if (world.hit(r, interval(0.001, infinity), rec)) {
             vec3 direction = rec.normal+random_unit_vector();
+            if (direction.near_zero()) direction = rec.normal;
             return 0.5 * ray_colour(ray(rec.p, direction), depth-1, world);
         }
 

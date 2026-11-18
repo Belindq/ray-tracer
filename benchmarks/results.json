@@ -1,0 +1,125 @@
+{
+  "date_utc": "2026-11-18T20:03:15.718026+00:00",
+  "cpu": "Apple M2 (8 cores)",
+  "logical_cpus": 8,
+  "os": "macOS-27.2.1-arm64-arm-64bit",
+  "compiler": "Apple clang version 17.0.0 (clang-1700.0.13.5)\nTarget: arm64-apple-darwin27.2.0\nThread model: posix\nInstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin",
+  "compiler_flags": "-std=c++17 -O2 -Wall -Wextra -Wpedantic -pthread -x c++",
+  "source_base_commit": "90ccb354559df7477991e3d738ff5e0460dde2e5",
+  "source_file_sha256": {
+    "srcs/camera.h": "e84ec8b00e84f76d6590a16cafef597b24599b844e60e775f983bbdbc67cad9c",
+    "srcs/colour.h": "01f52a37c863224a252466483d6580a3f31754b8d1167126e8c063c95026e0aa",
+    "srcs/hittable.h": "1108c26b68e77070e968980b40a0ced97940cf24a05d6e775e8991d99a3c336d",
+    "srcs/hittable_list.h": "38f69c70af91f755b3dac980acac035f7ffe707d76f8c220ba196e8fd9956094",
+    "srcs/interval.h": "f64cdb6b6f6e89bbe0b713e3f125dd7c9b157094ff62fb2e0a097949c58557d1",
+    "srcs/main": "39bef8af2f14f8a0af2606e0287a48b34462a3ba3a0e27f3bf7ceab780c0f017",
+    "srcs/material.h": "67dca4bf3571b9cccc5528af534a5ace73b9a701447b9a56ed238f183a9308b2",
+    "srcs/random.h": "aa374eb822599c9f62cf43d9af2a8db7526d4fb5c538c1e6e00bf647126fde93",
+    "srcs/ray.h": "6edaf602bd3dbad883a9029a6e54a207e68797cdf6683b0060ba58ac22e13862",
+    "srcs/sphere.h": "065af34c47c0495797b5bf39b4b418ae66bd2b9061de21be2dbadef84ce16448",
+    "srcs/utils.h": "af0da897bf1db30667592893823ad923d06110bc49bda639024159e5c637ee47",
+    "srcs/vec3.h": "b0d8573ca7aac9d393cba2430ae2febe03ad4ac36046bfc085e07bd2f9d18b95"
+  },
+  "executable_sha256": "cfdaecd0871ee4eab80a88ab3abf869bd72120865d37be72c344297f39fb53b4",
+  "scene": "two diffuse spheres (small sphere and ground), sky gradient",
+  "width": 800,
+  "height": 450,
+  "samples_per_pixel": 200,
+  "max_depth": 50,
+  "seed": 2027,
+  "repeats": 5,
+  "warmup_per_configuration": 1,
+  "execution_order": [
+    [
+      4,
+      8,
+      2,
+      1
+    ],
+    [
+      8,
+      2,
+      4,
+      1
+    ],
+    [
+      2,
+      1,
+      4,
+      8
+    ],
+    [
+      4,
+      2,
+      1,
+      8
+    ],
+    [
+      1,
+      4,
+      8,
+      2
+    ]
+  ],
+  "image_sha256": "f4056f1fbe93104ea6b7df35772737110a6fc127f6e62630b5ab6639a804a3cf",
+  "timing": "steady_clock: camera setup, framebuffer allocation, sampling, worker creation/join; excludes PPM encoding/output and process startup",
+  "comparison": "same optimized executable and deterministic sampler; 1 thread runs worker inline; not a before/after comparison with the original rand()-based renderer",
+  "results": [
+    {
+      "threads": 1,
+      "samples_seconds": [
+        3.85299967,
+        3.92147662,
+        4.25231875,
+        3.94679271,
+        3.95595975
+      ],
+      "median_seconds": 3.94679271,
+      "min_seconds": 3.85299967,
+      "max_seconds": 4.25231875,
+      "speedup": 1.0
+    },
+    {
+      "threads": 2,
+      "samples_seconds": [
+        2.19158358,
+        2.12205729,
+        2.48853967,
+        2.20541313,
+        2.08130042
+      ],
+      "median_seconds": 2.19158358,
+      "min_seconds": 2.08130042,
+      "max_seconds": 2.48853967,
+      "speedup": 1.8008862386165532
+    },
+    {
+      "threads": 4,
+      "samples_seconds": [
+        1.27600533,
+        1.10628488,
+        1.15835463,
+        1.13448771,
+        1.11609054
+      ],
+      "median_seconds": 1.13448771,
+      "min_seconds": 1.10628488,
+      "max_seconds": 1.27600533,
+      "speedup": 3.4789206398718946
+    },
+    {
+      "threads": 8,
+      "samples_seconds": [
+        1.26302521,
+        0.937437083,
+        0.990632333,
+        0.935396333,
+        0.98042325
+      ],
+      "median_seconds": 0.98042325,
+      "min_seconds": 0.935396333,
+      "max_seconds": 1.26302521,
+      "speedup": 4.025600892267702
+    }
+  ]
+}

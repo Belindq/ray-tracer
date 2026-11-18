@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 3.20)
+project(ray_tacer LANGUAGES CXX)
+find_package(Threads REQUIRED)
+set_source_files_properties(srcs/main PROPERTIES LANGUAGE CXX)
+add_executable(ray-tacer srcs/main)
+target_compile_features(ray-tacer PRIVATE cxx_std_17)
+target_link_libraries(ray-tacer PRIVATE Threads::Threads)

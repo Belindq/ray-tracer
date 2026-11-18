@@ -1,4 +1,6 @@
 build/
+build-cmake/
+__pycache__/
 raytracer
 *.ppm
 .DS_Store
